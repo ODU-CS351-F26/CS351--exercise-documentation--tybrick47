@@ -1,3 +1,5 @@
+* [Reports](https://odu-cs351-f26.github.io/CS351--exercise-documentation--tybrick47/)
+
 # WordCounter
 
 There are a number of applications in which it is useful to know what the most
