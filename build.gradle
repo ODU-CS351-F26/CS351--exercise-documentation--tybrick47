@@ -8,6 +8,9 @@ repositories {
     mavenCentral()
 }
 
+test {
+    useJUnitPlatform()
+}
 
 java {
     sourceCompatibility = JavaVersion.toVersion(11)
@@ -17,6 +20,7 @@ java {
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.0'
     testImplementation 'org.hamcrest:hamcrest-library:2.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.withType(Test) {
@@ -31,3 +35,15 @@ application { //Allows  ./gradlew run --args=path-to-test-data
     mainClass = 'edu.odu.cs.MostCommonWords'
 }
 
+task reports(type: Copy) {
+    dependsOn build, javadoc
+    from 'src/main/html'
+    from 'build/docs'
+    into 'reports'
+}
+
+gitPublishCopy.dependsOn reports
+
+task deployReports {
+    dependsOn gitPublishPush
+}
