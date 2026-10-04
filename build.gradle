@@ -1,7 +1,6 @@
 plugins {
    id 'java'
    id 'application'
-   id 'org.ajoberstar.git-publish' version '4.2.0'
 }
 
 repositories {
@@ -28,22 +27,61 @@ tasks.withType(Test) {
     ignoreFailures = true
     testLogging {
         events "passed", "skipped", "failed"
-        }
+    }
 }
 
 application { //Allows  ./gradlew run --args=path-to-test-data
     mainClass = 'edu.odu.cs.MostCommonWords'
 }
 
-task reports(type: Copy) {
-    dependsOn build, javadoc
+// ---- Report generation ----
+task copyHtml(type: Copy) {
+    dependsOn build
     from 'src/main/html'
-    from 'build/docs'
-    into 'reports'
+    into 'build/reports'
 }
 
-gitPublishCopy.dependsOn reports
+task copyDocs(type: Copy) {
+    dependsOn build, javadoc
+    from 'build/docs'
+    into 'build/reports'
+}
 
-task deployReports {
-    dependsOn gitPublishPush
+task reports {
+    dependsOn build, copyHtml, copyDocs
+}
+
+// ---- Deploy to gh-pages ----
+def pagesDir = file('build/gh-pages')
+def pagesRepo = 'https://github.com/odu-cs351-f26/CS351--exercise-documentation--tybrick47.git'
+
+task cloneGhPages(type: Exec) {
+    doFirst { delete pagesDir }
+    commandLine 'git', 'clone', '--branch', 'gh-pages', '--single-branch', pagesRepo, pagesDir.path
+}
+
+task copyReportsToPages(type: Sync) {
+    dependsOn reports, cloneGhPages
+    from 'build/reports'
+    into pagesDir
+    preserve { include '.git/**' }
+}
+
+task addPages(type: Exec) {
+    dependsOn copyReportsToPages
+    workingDir pagesDir
+    commandLine 'git', 'add', '-A'
+}
+
+task commitPages(type: Exec) {
+    dependsOn addPages
+    workingDir pagesDir
+    commandLine 'git', 'commit', '-m', 'Deploy reports'
+    ignoreExitValue = true
+}
+
+task deployReports(type: Exec) {
+    dependsOn commitPages
+    workingDir pagesDir
+    commandLine 'git', 'push', 'origin', 'gh-pages'
 }
